@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+    <title>System Security Scanner</title>
+    <hta:application 
+        id="oHTA"
+        applicationname="SecurityScanner"
+        border="none"
+        borderstyle="normal"
+        caption="no"
+        contextmenu="no"
+        maximizebutton="no"
+        minimizebutton="no"
+        navigable="no"
+        scroll="no"
+        scrollflat="no"
+        selection="no"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="no"
+        version="1.0"
+        windowstate="normal"
+    />
+    <style>
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background-color: #0d1b2a;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            width: 600px;
+            height: 450px;
+            overflow: hidden;
+            border: 3px solid #00d4aa;
+        }
+        
+        .main-container {
+            padding: 20px;
+            height: 100%;
+        }
+        
+        .antivirus-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #00d4aa;
+        }
+        
+        .antivirus-title {
+            font-size: 42px;
+            font-weight: bold;
+            color: #00d4aa;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+        }
+        
+        .antivirus-subtitle {
+            font-size: 14px;
+            color: #a0c4ff;
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+        
+        .scan-section {
+            background-color: #1b263b;
+            border: 1px solid #415a77;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .scan-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00d4aa;
+            margin-bottom: 15px;
+        }
+        
+        .scan-info {
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .current-file {
+            float: left;
+            font-size: 14px;
+            color: #e0e1dd;
+        }
+        
+        #percentage {
+            float: right;
+            font-size: 24px;
+            color: #00d4aa;
+            font-weight: bold;
+        }
+        
+        .progress-container {
+            clear: both;
+            width: 100%;
+            height: 30px;
+            background-color: #0d1b2a;
+            border: 2px solid #00d4aa;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #00d4aa;
+        }
+        
+        .stats {
+            font-size: 13px;
+            color: #778da9;
+            overflow: hidden;
+        }
+        
+        .stat-left {
+            float: left;
+        }
+        
+        .stat-center {
+            float: left;
+            margin-left: 50px;
+        }
+        
+        .stat-right {
+            float: right;
+        }
+        
+        .warning-text {
+            font-size: 12px;
+            color: #415a77;
+            text-align: center;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+        
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding-top: 30px;
+        }
+        
+        .success-icon {
+            font-size: 70px;
+            color: #00d4aa;
+            margin-bottom: 15px;
+        }
+        
+        .success-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00d4aa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .success-text {
+            font-size: 16px;
+            color: #e0e1dd;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        .ok-button {
+            background-color: #00d4aa;
+            border: 3px solid #00a884;
+            color: white;
+            padding: 12px 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        
+        .ok-button:hover {
+            background-color: #00a884;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="main-container">
+        <div class="antivirus-header">
+            <div class="antivirus-title">&#128737; ANTIVIRUS</div>
+            <div class="antivirus-subtitle">SYSTEM SECURITY SCANNER PRO</div>
+        </div>
+        
+        <div id="scanScreen">
+            <div class="scan-section">
+                <div class="scan-header">System Security Check...</div>
+                
+                <div class="scan-info">
+                    <span class="current-file" id="currentCheck">Initializing scan...</span>
+                    <span id="percentage">0%</span>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
+                <div class="stats">
+                    <span class="stat-left" id="filesScanned">Files checked: 0</span>
+                    <span class="stat-center" id="threatsFound">Threats: 0</span>
+                    <span class="stat-right" id="timeElapsed">Time: 0s</span>
+                </div>
+            </div>
+            
+            <div class="warning-text">
+                Please do not turn off your computer during the scan<br>
+                Deep system file scanning in progress...
+            </div>
+        </div>
+        
+        <div id="successScreen" class="success-screen">
+            <div class="success-icon">&#10003;</div>
+            <div class="success-title">Scan Complete!</div>
+            <div class="success-text">
+                System is secure. No threats detected.<br>
+                Your computer is protected.
+            </div>
+            <button class="ok-button" onclick="window.close()">OK</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        window.moveTo((screen.availWidth - 600) / 2, (screen.availHeight - 450) / 2);
+        window.resizeTo(610, 460);
+        
+        var scanStages = [
+            "Checking system files...",
+            "Analyzing memory processes...",
+            "Scanning registry entries...",
+            "Checking browser extensions...",
+            "Analyzing network connections...",
+            "Scanning startup programs...",
+            "Checking for rootkits...",
+            "Verifying system integrity...",
+            "Analyzing suspicious behavior...",
+            "Finalizing security check..."
+        ];
+        
+        var progress = 0;
+        var filesScanned = 0;
+        var startTime = new Date().getTime();
+        var scanDuration = 20000;
+        var updateInterval = 100;
+        var steps = scanDuration / updateInterval;
+        var progressPerStep = 100 / steps;
+        
+        setTimeout(function() {
+            var scanTimer = setInterval(function() {
+                if (progress >= 100) {
+                    clearInterval(scanTimer);
+                    showSuccess();
+                    return;
+                }
+                
+                progress += progressPerStep;
+                if (progress > 100) progress = 100;
+                
+                var stageIndex = Math.floor((progress / 100) * scanStages.length);
+                if (stageIndex >= scanStages.length) stageIndex = scanStages.length - 1;
+                
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('percentage').innerText = Math.floor(progress) + '%';
+                document.getElementById('currentCheck').innerText = scanStages[stageIndex];
+                
+                filesScanned += Math.floor(Math.random() * 250) + 100;
+                document.getElementById('filesScanned').innerText = 'Files checked: ' + filesScanned.toLocaleString();
+                
+                var elapsed = Math.floor((new Date().getTime() - startTime) / 1000);
+                document.getElementById('timeElapsed').innerText = 'Time: ' + elapsed + 's';
+            }, updateInterval);
+        }, 800);
+        
+        function showSuccess() {
+            document.getElementById('scanScreen').style.display = 'none';
+            document.getElementById('successScreen').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
